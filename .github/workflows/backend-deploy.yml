@@ -5,15 +5,24 @@ on:
     branches:
       - develop
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select target environment"
+        required: true
+        default: "qa"
+        type: choice
+        options:
+          - qa
+          - staging
+          - prod
 
 permissions:
   contents: read
 
 env:
   AWS_REGION: "ap-southeast-1"
-  # This creates the "sub-folder" structure in ECR
-  # Ensure a repo with this EXACT name exists in your AWS Console
-  REPOSITORY_PATH: "unboundshare/hello-backend"
+  # Base name of the app
+  APP_NAME: "hello-backend"
 
 jobs:
   build-and-push:
@@ -23,6 +32,16 @@ jobs:
     steps:
       - name: "Checkout Code"
         uses: actions/checkout@v4
+
+      - name: "Set Environment Variable"
+        # If triggered by push (develop branch), default to 'qa'
+        # If triggered manually, use the input selection
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "TARGET_ENV=qa" >> $GITHUB_ENV
+          else
+            echo "TARGET_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          fi
 
       - name: "Configure AWS Credentials"
         uses: aws-actions/configure-aws-credentials@v4
@@ -38,20 +57,24 @@ jobs:
       - name: "Build, Tag, and Push"
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          # Use the full commit hash as requested
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # The full URI will look like: 
-          # 975050065947.dkr.ecr.ap-southeast-1.amazonaws.com/unboundshare/hello-backend
-          FULL_REPO_NAME=$ECR_REGISTRY/$REPOSITORY_PATH
-          
-          echo "Building image for $FULL_REPO_NAME"
+          # Construct the full namespaced path: unboundshare/qa/hello-backend
+          # NOTE: You must have created this repository name in AWS first!
+          REPO_PATH="unboundshare/${{ env.TARGET_ENV }}/$APP_NAME"
+          FULL_URI="$ECR_REGISTRY/$REPO_PATH"
 
-          # 1. Build and tag with BOTH 'latest' and the 'commit-hash'
-          docker build -t $FULL_REPO_NAME:latest -t $FULL_REPO_NAME:$IMAGE_TAG .
+          echo "Targeting Repo: $FULL_URI"
+
+          # 1. Build and Tag
+          # Tags: 'latest', 'commit-hash', and 'environment' (qa/staging/prod)
+          docker build -t $FULL_URI:latest \
+                       -t $FULL_URI:$IMAGE_TAG \
+                       -t $FULL_URI:${{ env.TARGET_ENV }} .
           
-          # 2. Push both tags
-          docker push $FULL_REPO_NAME:latest
-          docker push $FULL_REPO_NAME:$IMAGE_TAG
+          # 2. Push all tags
+          docker push $FULL_URI:latest
+          docker push $FULL_URI:$IMAGE_TAG
+          docker push $FULL_URI:${{ env.TARGET_ENV }}
           
-          echo "Pushed tags: latest, $IMAGE_TAG"
+          echo "Successfully pushed to $REPO_PATH with tags: latest, $IMAGE_TAG, ${{ env.TARGET_ENV }}"
