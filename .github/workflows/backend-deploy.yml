@@ -4,14 +4,16 @@ on:
   push:
     branches:
       - develop
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
   AWS_REGION: "ap-southeast-1"
-  IMAGE_NAME: "unboundshare" # Must match your Terraform repo name
+  # This creates the "sub-folder" structure in ECR
+  # Ensure a repo with this EXACT name exists in your AWS Console
+  REPOSITORY_PATH: "unboundshare/hello-backend"
 
 jobs:
   build-and-push:
@@ -33,19 +35,23 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: "Build, Tag, and Push Image to ECR"
+      - name: "Build, Tag, and Push"
         env:
-          # This gets the registry URL automatically from the login step
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }} # Uses the commit hash as a unique version
+          # Use the full commit hash as requested
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          # 1. Build the Docker image
-          docker build -t $ECR_REGISTRY/$IMAGE_NAME:latest -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
+          # The full URI will look like: 
+          # 975050065947.dkr.ecr.ap-southeast-1.amazonaws.com/unboundshare/hello-backend
+          FULL_REPO_NAME=$ECR_REGISTRY/$REPOSITORY_PATH
           
-          # 2. Push 'latest' (for easy pulling)
-          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
+          echo "Building image for $FULL_REPO_NAME"
+
+          # 1. Build and tag with BOTH 'latest' and the 'commit-hash'
+          docker build -t $FULL_REPO_NAME:latest -t $FULL_REPO_NAME:$IMAGE_TAG .
           
-          # 3. Push unique tag (for version history/rollback)
-          docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          # 2. Push both tags
+          docker push $FULL_REPO_NAME:latest
+          docker push $FULL_REPO_NAME:$IMAGE_TAG
           
-          echo "Successfully pushed $IMAGE_NAME to $ECR_REGISTRY"
+          echo "Pushed tags: latest, $IMAGE_TAG"
