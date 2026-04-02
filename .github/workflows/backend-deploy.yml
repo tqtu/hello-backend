@@ -14,7 +14,7 @@ on:
         options:
           - qa
           - staging
-          - prod
+          - production
 
 permissions:
   contents: read
@@ -67,7 +67,7 @@ jobs:
           echo "Targeting Repo: $FULL_URI"
 
           # 1. Build and Tag
-          # Tags: 'latest', 'commit-hash', and 'environment' (qa/staging/prod)
+          # Tags: 'latest', 'commit-hash', and 'environment' (qa/staging/production)
           docker build -t $FULL_URI:latest \
                        -t $FULL_URI:$IMAGE_TAG \
                        -t $FULL_URI:${{ env.TARGET_ENV }} .
