@@ -14,15 +14,15 @@ on:
         options:
           - qa
           - staging
-          - production
+          - production # Matches your screenshot folder name
 
 permissions:
   contents: read
 
 env:
   AWS_REGION: "ap-southeast-1"
-  # Base name of the app
-  APP_NAME: "hello-backend"
+  # This identifies the specific service/Dockerfile
+  SERVICE_NAME: "hello-backend"
 
 jobs:
   build-and-push:
@@ -34,8 +34,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: "Set Environment Variable"
-        # If triggered by push (develop branch), default to 'qa'
-        # If triggered manually, use the input selection
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
             echo "TARGET_ENV=qa" >> $GITHUB_ENV
@@ -57,24 +55,28 @@ jobs:
       - name: "Build, Tag, and Push"
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Construct the full namespaced path: unboundshare/qa/hello-backend
-          # NOTE: You must have created this repository name in AWS first!
-          REPO_PATH="unboundshare/${{ env.TARGET_ENV }}/$APP_NAME"
-          FULL_URI="$ECR_REGISTRY/$REPO_PATH"
-
-          echo "Targeting Repo: $FULL_URI"
-
-          # 1. Build and Tag
-          # Tags: 'latest', 'commit-hash', and 'environment' (qa/staging/production)
-          docker build -t $FULL_URI:latest \
-                       -t $FULL_URI:$IMAGE_TAG \
-                       -t $FULL_URI:${{ env.TARGET_ENV }} .
+          # 1. Generate a short SHA for the tag
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
           
-          # 2. Push all tags
-          docker push $FULL_URI:latest
-          docker push $FULL_URI:$IMAGE_TAG
-          docker push $FULL_URI:${{ env.TARGET_ENV }}
+          # 2. Construct the Repository URI (matches your screenshot structure)
+          # Example: .../unboundshare/qa/hello-backend
+          REPO_URI="${{ env.ECR_REGISTRY }}/unboundshare/${{ env.TARGET_ENV }}/${{ env.SERVICE_NAME }}"
           
-          echo "Successfully pushed to $REPO_PATH with tags: latest, $IMAGE_TAG, ${{ env.TARGET_ENV }}"
+          # 3. Create the Prefixed Tag
+          # Format: hello-backend-b4f4ee0b
+          PREFIXED_TAG="${{ env.SERVICE_NAME }}-$SHORT_SHA"
+
+          echo "Pushing to: $REPO_URI"
+          echo "Using Tag: $PREFIXED_TAG"
+
+          # 4. Build with specific tags
+          # We tag with 'latest' for the environment and the 'service-sha' for tracking
+          docker build -t "$REPO_URI:latest" \
+                       -t "$REPO_URI:$PREFIXED_TAG" \
+                       -t "$REPO_URI:${{ env.TARGET_ENV }}" .
+          
+          # 5. Push to ECR
+          docker push "$REPO_URI:latest"
+          docker push "$REPO_URI:$PREFIXED_TAG"
+          docker push "$REPO_URI:${{ env.TARGET_ENV }}"
