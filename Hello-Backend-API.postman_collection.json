@@ -1,0 +1,134 @@
+{
+  "info": {
+    "_postman_id": "hello-backend-api",
+    "name": "Hello Backend API",
+    "description": "Hello Backend REST API - Health & Users endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "health"
+          ]
+        },
+        "description": "Check if the API is running and get status information"
+      },
+      "response": [
+        {
+          "name": "Health Check Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"status\": \"UP\",\n  \"message\": \"Hello Backend API is running!\",\n  \"timestamp\": \"2026-04-02T09:39:48.493995\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users"
+          ]
+        },
+        "description": "Get list of example users with fake data for testing"
+      },
+      "response": [
+        {
+          "name": "Get Users Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"username\": \"john_doe\",\n    \"active\": true\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Jane Smith\",\n    \"email\": \"jane@example.com\",\n    \"username\": \"jane_smith\",\n    \"active\": true\n  },\n  {\n    \"id\": 3,\n    \"name\": \"Bob Johnson\",\n    \"email\": \"bob@example.com\",\n    \"username\": \"bob_johnson\",\n    \"active\": false\n  },\n  {\n    \"id\": 4,\n    \"name\": \"Alice Williams\",\n    \"email\": \"alice@example.com\",\n    \"username\": \"alice_williams\",\n    \"active\": true\n  },\n  {\n    \"id\": 5,\n    \"name\": \"Charlie Brown\",\n    \"email\": \"charlie@example.com\",\n    \"username\": \"charlie_brown\",\n    \"active\": false\n  }\n]\n"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}
+

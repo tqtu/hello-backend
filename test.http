@@ -1,0 +1,20 @@
+@base_url = http://localhost:8080/api
+
+### Health Check - Test if API is running
+GET {{base_url}}/health
+Accept: application/json
+
+### Get Users - Get example users list
+GET {{base_url}}/users
+Accept: application/json
+
+### Health Check with timing
+# This will show the response time
+GET {{base_url}}/health
+Accept: application/json
+
+### Get Users with detailed output
+GET {{base_url}}/users?format=json
+Accept: application/json
+
+
